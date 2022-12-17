@@ -234,8 +234,18 @@ object hof{
       case Option.None => Option.None
     }
 
-  }
+    def printIfAny(): Unit = this match {
+      case Option.Some(v) => println(v)
+      case Option.None => ()
+    }
 
+    def zip[A](that: Option[A]): Option[(T, A)] = this match {
+      case Option.Some(v) => that.map( a => (v, a))
+      case Option.None => Option.None
+    }
+
+    def filter() = ???
+  }
 
   object Option {
     case class Some[T](v: T) extends Option[T]
