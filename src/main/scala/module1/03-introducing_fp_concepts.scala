@@ -244,7 +244,10 @@ object hof{
       case Option.None => Option.None
     }
 
-    def filter() = ???
+    def filter(p: T => Boolean): Option[T] = this match {
+      case Option.Some(v) if p(v) =>  Option.Some(v)
+      case Option.None => Option.None
+    }
   }
 
   object Option {
