@@ -292,8 +292,61 @@ object hof{
     */
 
    trait List[+T] {
-     def ::[TT >: T](elem: TT): List[TT] = ???
-   }
+     def ::[TT >: T](elem: TT): List[TT] = List.::(elem, this)
+
+     override def toString: String = {
+       def aux(list: List[T]): String = list match {
+         case List.::(head, tail) if tail != List.Nil => s"${head.toString}, ${aux(tail)}"
+         case List.::(head, tail) if tail == List.Nil => s"${head.toString}"
+         case List.Nil => ""
+       }
+
+       s"List(${aux(this)})"
+     }
+
+     def mkString(delim: String): String = {
+       def aux(list: List[T]): String = list match {
+         case List.::(head, tail) if tail != List.Nil => s"${head.toString}$delim${aux(tail)}"
+         case List.::(head, tail) if tail == List.Nil => s"${head.toString}"
+         case List.Nil => ""
+       }
+
+       s"${aux(this)}"
+     }
+
+     def reverse(): List[T] = {
+       var eList: List[T] = List()
+
+       import scala.annotation.tailrec
+
+       @tailrec
+       def aux(list: List[T]): Unit = list match {
+         case List.::(head, tail) =>
+           eList = eList.::(head)
+           aux(tail)
+         case List.Nil => ()
+       }
+
+       aux(this)
+       eList
+     }
+
+     def map[B](f: T => B): List[B] = {
+       var eList: List[B] = List()
+
+       import scala.annotation.tailrec
+
+       @tailrec
+       def aux(list: List[T]): Unit = list match {
+         case List.::(head, tail) =>
+           eList = eList.::(f(head))
+           aux(tail)
+         case List.Nil => ()
+       }
+
+       aux(this)
+       eList
+     }
 
    object List {
      case class ::[A](head: A, tail: List[A]) extends List[A]
