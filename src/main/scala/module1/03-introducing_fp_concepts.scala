@@ -344,9 +344,53 @@ object hof{
          case List.Nil => ()
        }
 
-       aux(this)
+       aux(this.reverse())
        eList
      }
+
+     def flatMap[B](f: T => List[B]): List[B] = {
+       var eList: List[B] = List()
+
+       import scala.annotation.tailrec
+
+       @tailrec
+       def unwrapList(sList: List[B]): Unit = sList match {
+         case List.::(head, tail) =>
+           eList = eList.::(head)
+           unwrapList(tail)
+         case List.Nil => ()
+       }
+
+       @tailrec
+       def aux(list: List[T]): Unit = list match {
+         case List.::(head, tail) =>
+           unwrapList(f(head).reverse())
+           aux(tail)
+         case List.Nil => ()
+       }
+
+       aux(this.reverse())
+       eList
+     }
+
+     def filter(p: T => Boolean): List[T] = {
+       var eList: List[T] = List()
+
+       import scala.annotation.tailrec
+
+       @tailrec
+       def aux(list: List[T]): Unit = list match {
+         case List.::(head, tail) if p(head) =>
+           eList = eList.::(head)
+           aux(tail)
+         case List.::(_, tail) => aux(tail)
+         case List.Nil => ()
+       }
+
+       aux(this.reverse())
+       eList
+     }
+   }
 
    object List {
      case class ::[A](head: A, tail: List[A]) extends List[A]
@@ -354,6 +398,14 @@ object hof{
 
      def apply[A](v: A*): List[A] =
        if(v.isEmpty) Nil else ::(v.head, apply(v.tail:_*))
+
+     def incList(l: List[Int]): List[Int] = {
+       l.map(_ + 1)
+     }
+
+     def shoutString(l: List[String]): List[String] = {
+       l.map(_ + "!")
+     }
    }
 
    List(1, 2, 3)
