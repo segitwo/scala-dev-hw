@@ -14,7 +14,7 @@ object pattern_matching{
 
    i match {
      case Int => println("Int")
-     case String => println("String")
+     case v: String => println("String")
      case v: List[String] =>
      case v: List[Int] =>
    }
