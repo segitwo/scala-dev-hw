@@ -60,7 +60,7 @@ object Main{
 
 
     //implicit_conversions.res
-    implicit_scopes.result
+    // implicit_scopes.result
     println(s"Hello, from ${Thread.currentThread().getName}")
   }
 

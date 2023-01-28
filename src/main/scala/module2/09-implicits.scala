@@ -97,7 +97,7 @@ object implicits {
 //     }
 
 
-    val result = foo(Bar())
+  //  val result = foo(Bar())
 
 
   }
