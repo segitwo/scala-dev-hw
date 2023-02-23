@@ -28,6 +28,8 @@ version := "1.0"
 libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "2.1.1"
 libraryDependencies += "org.scalactic" %% "scalactic" % "3.2.14"
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.14" % "test"
+libraryDependencies ++= Dependencies.zio
+libraryDependencies ++= Dependencies.zioConfig
 
 // Here, `libraryDependencies` is a set of dependencies, and by using `+=`,
 // we're adding the scala-parser-combinators dependency to the set of dependencies
@@ -77,3 +79,5 @@ libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.14" % "test"
 
 // To learn more about multi-project builds, head over to the official sbt
 // documentation at http://www.scala-sbt.org/documentation.html
+scalacOptions += "-Ymacro-annotations"
+testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework"))

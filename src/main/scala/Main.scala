@@ -1,6 +1,9 @@
 import module1.threads.{Thread1, ToyFuture, getRatesLocation1, getRatesLocation2, getRatesLocation3, getRatesLocation4, getRatesLocation5, getRatesLocation6, printRunningTime}
 import module1.{functions, future, promise, type_system}
 import module2.implicits.{implicit_conversions, implicit_scopes}
+import module3.functional_effects
+import functional_effects.functionalProgram.declarativeEncoding
+import functional_effects.functionalProgram.executableEncoding
 
 import scala.util.Try
 
@@ -61,7 +64,14 @@ object Main{
 
     //implicit_conversions.res
     // implicit_scopes.result
-    println(s"Hello, from ${Thread.currentThread().getName}")
+  //  println(s"Hello, from ${Thread.currentThread().getName}")
+
+//    val r: executableEncoding.Console[Unit] = executableEncoding.p3
+//    val r2: declarativeEncoding.Console[Unit] = declarativeEncoding.p2
+//    declarativeEncoding.interpret(r2)
+
+
+
   }
 
 }
