@@ -26,7 +26,7 @@ package object emailService {
        val live = ZLayer.succeed(
          new Service {
            override def sendMail(email: Email): URIO[Console, Unit] =
-             zio.console.putStrLn(email.toString)
+             zio.console.putStrLn(email.toString).orDie
          }
        )
 
