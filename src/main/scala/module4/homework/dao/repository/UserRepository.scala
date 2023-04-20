@@ -41,35 +41,59 @@ object UserRepository{
             querySchema[User](""""User"""")
         }
 
+        lazy val roleSchema = quote {
+            querySchema[Role]("""Role""")
+        }
 
-        lazy val roleSchema = ???
-
-        lazy val userToRoleSchema = ???
+        lazy val userToRoleSchema = quote {
+            querySchema[UserToRole]("""UserToRole""")
+        }
 
         def findUser(userId: UserId): Result[Option[User]] = run(userSchema.filter(_.id == lift(userId.id)))
           .map(_.headOption)
         
         def createUser(user: User): Result[User] = run(userSchema.insert(lift(user))).as(user)
         
-        def createUsers(users: List[User]): Result[List[User]] = ???
+        def createUsers(users: List[User]): Result[List[User]] =
+            run(liftQuery(users)
+              .foreach(user => userSchema.insert(user).returning(u => u))
+            ).map(r => r.map(u => u))
+
+        def updateUser(user: User): Result[Unit] =
+            run(userSchema.filter(_.id == lift(user.id)).update(lift(user))).unit
         
-        def updateUser(user: User): Result[Unit] = ???
+        def deleteUser(user: User): Result[Unit] =
+            run(userSchema.filter(_.id == lift(user.id)).delete).unit
         
-        def deleteUser(user: User): Result[Unit] = ???
+        def findByLastName(lastName: String): Result[List[User]] =
+            run(userSchema.filter(_.lastName == lift(lastName))).map(r => r)
         
-        def findByLastName(lastName: String): Result[List[User]] = ???
+        def list(): Result[List[User]] = run(userSchema)
         
-        def list(): Result[List[User]] = ???
+        def userRoles(userId: UserId): Result[List[Role]] =
+            run(userToRoleSchema
+              .filter(_.userId == lift(userId.id))
+              .leftJoin(roleSchema)
+              .on((u, r) => u.roleId == r.code)
+            ).map(r => r.flatMap(t => t._2))
         
-        def userRoles(userId: UserId): Result[List[Role]] = ???
+        def insertRoleToUser(roleCode: RoleCode, userId: UserId): Result[Unit] = {
+            val userToRole = UserToRole(roleCode.code, userId.id)
+            run(userToRoleSchema.insert(lift(userToRole))).unit
+        }
+
+        def listUsersWithRole(roleCode: RoleCode): Result[List[User]] =
+            run(userToRoleSchema
+              .filter(_.roleId == lift(roleCode.code))
+              .leftJoin(userSchema)
+              .on((r, u) => r.roleId == u.id)
+            ).map(r => r.flatMap(t => t._2))
         
-        def insertRoleToUser(roleCode: RoleCode, userId: UserId): Result[Unit] = ???
-        
-        def listUsersWithRole(roleCode: RoleCode): Result[List[User]] = ???
-        
-        def findRoleByCode(roleCode: RoleCode): Result[Option[Role]] = ???
-                
+        def findRoleByCode(roleCode: RoleCode): Result[Option[Role]] =
+            run(roleSchema.filter(_.code == lift(roleCode.code)))
+              .map(r => r.headOption)
+
     }
 
-    val live: ULayer[UserRepository] = ???
+    val live: ULayer[UserRepository] = ZLayer.succeed(new ServiceImpl)
 }
