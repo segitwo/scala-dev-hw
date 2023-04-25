@@ -42,11 +42,11 @@ object UserRepository{
         }
 
         lazy val roleSchema = quote {
-            querySchema[Role]("""Role""")
+            querySchema[Role](""""Role"""")
         }
 
         lazy val userToRoleSchema = quote {
-            querySchema[UserToRole]("""UserToRole""")
+            querySchema[UserToRole](""""UserToRole"""")
         }
 
         def findUser(userId: UserId): Result[Option[User]] = run(userSchema.filter(_.id == lift(userId.id)))
@@ -75,7 +75,7 @@ object UserRepository{
               .filter(_.userId == lift(userId.id))
               .leftJoin(roleSchema)
               .on((u, r) => u.roleId == r.code)
-            ).map(r => r.flatMap(t => t._2))
+            ).map(res => res.flatMap(t => t._2))
         
         def insertRoleToUser(roleCode: RoleCode, userId: UserId): Result[Unit] = {
             val userToRole = UserToRole(roleCode.code, userId.id)
@@ -86,8 +86,8 @@ object UserRepository{
             run(userToRoleSchema
               .filter(_.roleId == lift(roleCode.code))
               .leftJoin(userSchema)
-              .on((r, u) => r.roleId == u.id)
-            ).map(r => r.flatMap(t => t._2))
+              .on((r, u) => r.userId == u.id)
+            ).map(res => res.flatMap(t => t._2))
         
         def findRoleByCode(roleCode: RoleCode): Result[Option[Role]] =
             run(roleSchema.filter(_.code == lift(roleCode.code)))
