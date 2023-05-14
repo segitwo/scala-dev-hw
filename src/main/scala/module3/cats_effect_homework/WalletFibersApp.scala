@@ -3,6 +3,8 @@ package module3.cats_effect_homework
 import cats.effect.{IO, IOApp}
 import cats.implicits._
 
+import scala.concurrent.duration.{Duration, DurationInt}
+
 // Поиграемся с кошельками на файлах и файберами.
 
 // Нужно написать программу где инициализируются три разных кошелька и для каждого из них работает фоновый процесс,
@@ -18,13 +20,25 @@ import cats.implicits._
 // def loop(): IO[Unit] = IO.println("hello").flatMap(_ => loop())
 object WalletFibersApp extends IOApp.Simple {
 
+  def launchToPup(wallet: Wallet[IO], duration: Duration, amount: BigDecimal): IO[Unit] =
+    IO.sleep(duration) *> wallet.topup(amount)
+
   def run: IO[Unit] =
     for {
       _ <- IO.println("Press any key to stop...")
       wallet1 <- Wallet.fileWallet[IO]("1")
       wallet2 <- Wallet.fileWallet[IO]("2")
       wallet3 <- Wallet.fileWallet[IO]("3")
-      // todo: запустить все файберы и ждать ввода от пользователя чтобы завершить работу
+      f1 <- launchToPup(wallet1, 100.millis, 100.0).iterateWhile(_ => true).start
+      f2 <- launchToPup(wallet2, 500.millis, 100.0).iterateWhile(_ => true).start
+      f3 <- launchToPup(wallet3, 2000.millis, 100.0).iterateWhile(_ => true).start
+      f4 <- (IO.sleep(2.second)
+        *> wallet1.balance.map(b => println(s"Wallet1 balance: $b"))
+        *> wallet2.balance.map(b => println(s"Wallet2 balance: $b"))
+        *> wallet3.balance.map(b => println(s"Wallet3 balance: $b")))
+        .iterateWhile(_ => true).start
+      _ <- IO.readLine
+      _ <- f1.cancel *> f2.cancel *> f3.cancel *> f4.cancel
     } yield ()
 
 }
