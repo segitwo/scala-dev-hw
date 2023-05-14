@@ -27,14 +27,23 @@ object WalletTransferApp extends IOApp.Simple {
     }
 
   // todo: реализовать интерпретатор (не забывая про ошибку списания при недостаточных средствах)
-  final class InMemWallet[F[_]](ref: Ref[F, BigDecimal]) extends Wallet[F] {
-    def balance: F[BigDecimal] = ???
-    def topup(amount: BigDecimal): F[Unit] = ???
-    def withdraw(amount: BigDecimal): F[Either[WalletError, Unit]] = ???
+  final class InMemWallet[F[_]: Monad](ref: Ref[F, BigDecimal]) extends Wallet[F] {
+    def balance: F[BigDecimal] = ref.get
+    def topup(amount: BigDecimal): F[Unit] = ref.update(b => b + amount)
+    def withdraw(amount: BigDecimal): F[Either[WalletError, Unit]] = for {
+      c <- ref.get.map { b =>
+        if (b < amount) Left(BalanceTooLow)
+        else Right(())
+      }
+      _ <- ref.update(b => b - amount)
+    } yield c
   }
 
   // todo: реализовать конструктор. Снова хитрая сигнатура, потому что создание Ref - это побочный эффект
-  def wallet(balance: BigDecimal): IO[Wallet[IO]] = ???
+  def wallet(balance: BigDecimal): IO[Wallet[IO]] = for {
+     b <- Ref.of[IO, BigDecimal](balance)
+     w = new InMemWallet[IO](b)
+  } yield w
 
   // а это тест, который выполняет перевод с одного кошелька на другой и выводит балансы после операции. Тоже менять не нужно
   def testTransfer: IO[(BigDecimal, BigDecimal)] =

@@ -4,6 +4,8 @@ import cats.effect.Sync
 import cats.implicits._
 import Wallet._
 
+import java.nio.file.{Files, Path, Paths}
+
 // DSL управления электронным кошельком
 trait Wallet[F[_]] {
   // возвращает текущий баланс
@@ -25,9 +27,29 @@ trait Wallet[F[_]] {
 // - java.nio.file.Files.exists
 // - java.nio.file.Paths.get
 final class FileWallet[F[_]: Sync](id: WalletId) extends Wallet[F] {
-  def balance: F[BigDecimal] = ???
-  def topup(amount: BigDecimal): F[Unit] = ???
-  def withdraw(amount: BigDecimal): F[Either[WalletError, Unit]] = ???
+  def balance: F[BigDecimal] = Sync[F].delay {
+    val path: Path = Paths.get(id)
+    val balance = Files.readString(path)
+    BigDecimal(balance)
+  }
+  def topup(amount: BigDecimal): F[Unit] = Sync[F].delay{
+    val path: Path = Paths.get(id)
+    if (Files.exists(path)) {
+      val balance = BigDecimal(Files.readString(path))
+      Files.write(path, (amount + balance).toString().getBytes())
+    } else {
+      Files.write(path, amount.toString().getBytes())
+    }
+  }
+  def withdraw(amount: BigDecimal): F[Either[WalletError, Unit]] = Sync[F].delay{
+    val path: Path = Paths.get(id)
+    val balance = BigDecimal(Files.readString(path))
+    if (amount > balance) Left(BalanceTooLow)
+    else {
+      Files.write(path, (balance - amount).toString().getBytes())
+      Right(())
+    }
+  }
 }
 
 object Wallet {
@@ -37,7 +59,7 @@ object Wallet {
   // Здесь нужно использовать обобщенную версию уже пройденного вами метода IO.delay,
   // вызывается она так: Sync[F].delay(...)
   // Тайпкласс Sync из cats-effect описывает возможность заворачивания сайд-эффектов
-  def fileWallet[F[_]: Sync](id: WalletId): F[Wallet[F]] = ???
+  def fileWallet[F[_]: Sync](id: WalletId): F[Wallet[F]] = Sync[F].delay(new FileWallet[F](id))
 
   type WalletId = String
 
