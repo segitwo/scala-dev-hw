@@ -1,7 +1,8 @@
 package module3
 
 import module3.zioConcurrency.printEffectRunningTime
-import zio.{Has, Task, ULayer, URIO, ZIO, ZLayer}
+import module3.zio_homework.config.AppConfig
+import zio.{ExitCode, Has, Task, ULayer, URIO, ZIO, ZLayer}
 import zio.clock.{Clock, sleep}
 import zio.console._
 import zio.duration.durationInt
@@ -50,7 +51,11 @@ package object zio_homework {
    */
 
 
-  def loadConfigOrDefault = ???
+  def loadConfigOrDefault: URIO[Console, AppConfig] =
+    for {
+      conf <- config.load.orElse(Task.succeed(AppConfig("127.0.0.1", "5432")))
+      _ <- putStrLn(conf.toString).orDie
+    } yield conf
 
 
   /**
@@ -79,11 +84,11 @@ package object zio_homework {
    * можно использовать ф-цию printEffectRunningTime, которую мы разработали на занятиях
    */
 
-  lazy val app: ZIO[Clock with Console with Random, IOException, Int] = printEffectRunningTime(
+  lazy val app: URIO[Clock with Console with Random, Int] = printEffectRunningTime(
     for {
       numbers <- ZIO.collectAll(effects)
-      sum = numbers.fold(0)(_ + _)
-      _ <- putStrLn(sum.toString)
+      sum = numbers.sum
+      _ <- putStrLn(sum.toString).orDie
     } yield sum
   )
 
@@ -94,11 +99,11 @@ package object zio_homework {
    * 4.4 Усовершенствуйте программу 4.3 так, чтобы минимизировать время ее выполнения
    */
 
-  lazy val appSpeedUp: ZIO[Clock with Console with Random, IOException, Int] = printEffectRunningTime(
+  lazy val appSpeedUp: URIO[Clock with Console with Random, Int] = printEffectRunningTime(
     for {
       numbers <- ZIO.collectAllPar(effects)
-      sum = numbers.fold(0)(_ + _)
-      _ <- putStrLn(sum.toString)
+      sum = numbers.sum
+      _ <- putStrLn(sum.toString).orDie
     } yield sum
   )
 
@@ -108,24 +113,21 @@ package object zio_homework {
    * молжно было использовать аналогично zio.console.putStrLn например
    */
 
+  type LogEffectRunningTimeService = Has[LogEffectRunningTimeService.Service]
+
   @accessible
-  object PrintEffectRunningTime {
+  object LogEffectRunningTimeService {
     trait Service {
-      def printEffectRunningTime[R, E, A](zio: ZIO[R, E, A]): ZIO[Clock with R, E, A]
+      def logTime[R, E, A](zio: ZIO[R, E, A]): ZIO[Console with Clock with R, E, A]
     }
 
-    class Impl() extends Service {
+    class ServiceImpl() extends Service {
           val currentTime: URIO[Clock, Long] = zio.clock.currentTime(TimeUnit.SECONDS)
-          def printEffectRunningTime[R, E, A](zio: ZIO[R, E, A]): ZIO[Clock with R, E, A] = for {
-            start <- currentTime
-            r <- zio
-            end <- currentTime
-            _ <- ZIO.effect(println(s"Running time ${end - start}")).orDie
-          } yield r
-
+          def logTime[R, E, A](zio: ZIO[R, E, A]): ZIO[Console with Clock with R, E, A] =
+            printEffectRunningTime(zio)
     }
 
-     val live = ???
+    val live: ULayer[LogEffectRunningTimeService] = ZLayer.succeed(new ServiceImpl)
   }
 
    /**
@@ -135,13 +137,13 @@ package object zio_homework {
      * 
      */
 
-  lazy val appWithTimeLogg = ???
+  lazy val appWithTimeLogg: URIO[LogEffectRunningTimeService with Console with Clock with Random, Int] =
+    LogEffectRunningTimeService.logTime(app)
 
   /**
     * 
     * Подготовьте его к запуску и затем запустите воспользовавшись ZioHomeWorkApp
     */
 
-  lazy val runApp = ???
-
+  lazy val runApp = appWithTimeLogg.provideSomeLayer[Console with Random with Clock](LogEffectRunningTimeService.live)
 }
