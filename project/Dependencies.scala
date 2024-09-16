@@ -7,7 +7,7 @@ object Dependencies {
     "org.typelevel" %% "kind-projector" % KindProjectorVersion
 
   lazy val ZioVersion = "1.0.4"
-  lazy val LiquibaseVersion = "3.4.2"
+  lazy val LiquibaseVersion = "3.10.3"
   lazy val PostgresVersion = "42.3.1"
   lazy val LogbackVersion = "1.2.3"
   lazy val ZIOHttpVersion = "1.0.0.0-RC27"
@@ -39,8 +39,8 @@ object Dependencies {
   lazy val postgres = "org.postgresql" % "postgresql" % PostgresVersion
 
   lazy val  testContainers = Seq(
-    "com.dimafeng"  %% "testcontainers-scala-postgresql" % "0.39.11"  % Test,
-    "com.dimafeng"            %% "testcontainers-scala-scalatest"       % "0.39.11"  % Test
+    "com.dimafeng"  %% "testcontainers-scala-postgresql" % "0.40.12"  % Test,
+    "com.dimafeng"            %% "testcontainers-scala-scalatest"       % "0.40.12"  % Test
   )
 
   lazy val logback = "ch.qos.logback"  %  "logback-classic" % LogbackVersion
