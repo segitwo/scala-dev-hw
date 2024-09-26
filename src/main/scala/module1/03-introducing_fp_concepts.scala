@@ -234,8 +234,21 @@ object hof{
       case Option.None => Option.None
     }
 
-  }
+    def printIfAny(): Unit = this match {
+      case Option.Some(v) => println(v)
+      case Option.None => ()
+    }
 
+    def zip[A](that: Option[A]): Option[(T, A)] = this match {
+      case Option.Some(v) => that.map( a => (v, a))
+      case Option.None => Option.None
+    }
+
+    def filter(p: T => Boolean): Option[T] = this match {
+      case Option.Some(v) if p(v) =>  Option.Some(v)
+      case _ => Option.None
+    }
+  }
 
   object Option {
     case class Some[T](v: T) extends Option[T]
@@ -279,7 +292,104 @@ object hof{
     */
 
    trait List[+T] {
-     def ::[TT >: T](elem: TT): List[TT] = ???
+     def ::[TT >: T](elem: TT): List[TT] = List.::(elem, this)
+
+     override def toString: String = {
+       def aux(list: List[T]): String = list match {
+         case List.::(head, tail) if tail != List.Nil => s"${head.toString}, ${aux(tail)}"
+         case List.::(head, tail) if tail == List.Nil => s"${head.toString}"
+         case List.Nil => ""
+       }
+
+       s"List(${aux(this)})"
+     }
+
+     def mkString(delim: String): String = {
+       def aux(list: List[T]): String = list match {
+         case List.::(head, tail) if tail != List.Nil => s"${head.toString}$delim${aux(tail)}"
+         case List.::(head, tail) if tail == List.Nil => s"${head.toString}"
+         case List.Nil => ""
+       }
+
+       s"${aux(this)}"
+     }
+
+     def reverse(): List[T] = {
+       var eList: List[T] = List()
+
+       import scala.annotation.tailrec
+
+       @tailrec
+       def aux(list: List[T]): Unit = list match {
+         case List.::(head, tail) =>
+           eList = eList.::(head)
+           aux(tail)
+         case List.Nil => ()
+       }
+
+       aux(this)
+       eList
+     }
+
+     def map[B](f: T => B): List[B] = {
+       var eList: List[B] = List()
+
+       import scala.annotation.tailrec
+
+       @tailrec
+       def aux(list: List[T]): Unit = list match {
+         case List.::(head, tail) =>
+           eList = eList.::(f(head))
+           aux(tail)
+         case List.Nil => ()
+       }
+
+       aux(this.reverse())
+       eList
+     }
+
+     def flatMap[B](f: T => List[B]): List[B] = {
+       var eList: List[B] = List()
+
+       import scala.annotation.tailrec
+
+       @tailrec
+       def unwrapList(sList: List[B]): Unit = sList match {
+         case List.::(head, tail) =>
+           eList = eList.::(head)
+           unwrapList(tail)
+         case List.Nil => ()
+       }
+
+       @tailrec
+       def aux(list: List[T]): Unit = list match {
+         case List.::(head, tail) =>
+           unwrapList(f(head).reverse())
+           aux(tail)
+         case List.Nil => ()
+       }
+
+       aux(this.reverse())
+       eList
+     }
+
+     def filter(p: T => Boolean): List[T] = {
+       var eList: List[T] = List()
+
+       import scala.annotation.tailrec
+
+       @tailrec
+       def aux(list: List[T]): Unit = list match {
+         case List.::(head, tail) if p(head) =>
+           eList = eList.::(head)
+           aux(tail)
+         case List.::(_, tail) => aux(tail)
+         case List.Nil => ()
+       }
+
+       aux(this.reverse())
+       eList
+     }
    }
 
    object List {
@@ -288,6 +398,14 @@ object hof{
 
      def apply[A](v: A*): List[A] =
        if(v.isEmpty) Nil else ::(v.head, apply(v.tail:_*))
+
+     def incList(l: List[Int]): List[Int] = {
+       l.map(_ + 1)
+     }
+
+     def shoutString(l: List[String]): List[String] = {
+       l.map(_ + "!")
+     }
    }
 
    List(1, 2, 3)
